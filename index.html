@@ -1043,7 +1043,7 @@ ${cvResult}
 قدّم 5 نصائح مخصصة وعملية لتحسين هذا CV ورفع نسبة القبول. كل نصيحة في 2-3 جمل. ابدأ كل نصيحة بـ "نصيحة X:" ثم عنوان قصير ثم الشرح.`;
 
     const tipsRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1072,7 +1072,7 @@ ${cvResult.substring(0, 1000)}
 ${userData.cvLang === 'english' ? 'Write in English.' : 'اكتب بالعربية.'}`;
 
     const coverRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
