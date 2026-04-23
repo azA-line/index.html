@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProResume AI — سيرتك الذاتية المثالية</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== CONFIG ===== */
+  /* ضع مفتاح Gemini API هنا */
+  /* سيتم طلبه من المستخدم عند الضغط على زر البدء */
+
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dim: #8a6f30;
+    --bg: #0A0A0F;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --text: #F0EDE6;
+    --muted: #888;
+    --border: rgba(201,168,76,0.2);
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== NOISE TEXTURE ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* ===== GLOW BG ===== */
+  .glow-bg {
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 60px 20px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 6px 16px;
+    border-radius: 100px;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 7vw, 72px);
+    font-weight: 900;
+    line-height: 1.1;
+    background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dim) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  header p {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto 32px;
+    line-height: 1.7;
+  }
+
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ===== MAIN CONTAINER ===== */
+  .container {
+    position: relative;
+    z-index: 10;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* ===== API KEY SECTION ===== */
+  #apiSection {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .section-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  .api-link {
+    color: var(--gold);
+    font-size: 13px;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2px;
+  }
+
+  input[type="password"], input[type="text"], textarea, select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    direction: rtl;
+  }
+
+  input[type="password"]:focus, input[type="text"]:focus,
+  textarea:focus, select:focus {
+    border-color: var(--gold-dim);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  /* ===== FORM ===== */
+  #formSection {
+    display: none;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  @media(max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--bg);
+    flex-shrink: 0;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px 28px;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-gold:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-gold:active { transform: translateY(0); }
+  .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .btn-outline:hover { border-color: var(--gold-dim); }
+
+  /* ===== LOADING ===== */
+  #loadingSection {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .loader-ring {
+    width: 72px;
+    height: 72px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin: 0 auto 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-steps {
+    list-style: none;
+    text-align: right;
+    max-width: 260px;
+    margin: 24px auto 0;
+  }
+
+  .loading-steps li {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s;
+  }
+
+  .loading-steps li.active { color: var(--gold); }
+  .loading-steps li.done { color: #4caf72; }
+
+  .step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  .loading-steps li.active .step-dot { background: var(--gold); }
+  .loading-steps li.done .step-dot { background: #4caf72; }
+
+  /* ===== RESULT ===== */
+  #resultSection {
+    display: none;
+  }
+
+  .result-header {
+    background: linear-gradient(135deg, var(--bg2), var(--bg3));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: gap;
+    gap: 16px;
+  }
+
+  .result-score {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .score-ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: conic-gradient(var(--gold) 0% 92%, var(--border) 92% 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--gold);
+    position: relative;
+  }
+
+  .score-ring::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    background: var(--bg2);
+    border-radius: 50%;
+  }
+
+  .score-ring span { position: relative; z-index: 1; }
+
+  .result-title { font-size: 20px; font-weight: 700; }
+  .result-subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* ===== CV OUTPUT ===== */
+  .cv-output {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .cv-tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  .cv-tab {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .cv-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  .cv-content {
+    padding: 28px;
+    display: none;
+  }
+
+  .cv-content.active { display: block; }
+
+  .cv-section {
+    margin-bottom: 28px;
+  }
+
+  .cv-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cv-text {
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  .tip-card {
+    background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .tip-num {
+    font-weight: 700;
+    color: var(--gold);
+    margin-left: 6px;
+  }
+
+  /* ===== ACTION BUTTONS ===== */
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  @media(max-width: 480px) {
+    .action-row { grid-template-columns: 1fr; }
+  }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-bar-wrap {
+    background: var(--bg3);
+    border-radius: 100px;
+    height: 6px;
+    margin: 8px 0 16px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    border-radius: 100px;
+    transition: width 0.5s ease;
+  }
+
+  /* ===== PAYMENT SECTION ===== */
+  .payment-banner {
+    background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(201,168,76,0.05));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  .payment-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+    margin: 12px 0 4px;
+  }
+
+  .payment-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 32px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ===== ALERTS ===== */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .alert-error {
+    background: rgba(220,50,50,0.1);
+    border: 1px solid rgba(220,50,50,0.3);
+    color: #ff7070;
+  }
+
+  /* ===== ATS BADGE ===== */
+  .ats-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .ats-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: rgba(76,175,114,0.1);
+    border: 1px solid rgba(76,175,114,0.3);
+    color: #4caf72;
+  }
+
+  .ats-badge.warn {
+    background: rgba(201,168,76,0.1);
+    border-color: rgba(201,168,76,0.3);
+    color: var(--gold);
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-up { animation: fadeUp 0.5s ease forwards; }
+
+  .paypal-btn {
+    background: #003087;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px 28px;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.2s;
+  }
+
+  .paypal-btn:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+
+<div class="glow-bg"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-badge">✦ ProResume AI ✦</div>
+  <h1>سيرتك الذاتية<br>المثالية</h1>
+  <p>ذكاء اصطناعي متخصص يحوّل معلوماتك إلى CV احترافي يرفع نسبة قبولك حتى 99%</p>
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-num">99%</div>
+      <div class="stat-label">نسبة القبول</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">ATS</div>
+      <div class="stat-label">متوافق تماماً</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">60s</div>
+      <div class="stat-label">وقت التوليد</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">$19</div>
+      <div class="stat-label">سعر واحد</div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ERROR -->
+  <div id="errorAlert" class="alert alert-error" style="display:none;"></div>
+
+  <!-- API KEY SECTION -->
+  <div id="apiSection" class="card fade-up">
+    <div class="section-label">الخطوة الأولى</div>
+    <div class="section-title">مفتاح Gemini API</div>
+    <div class="section-desc">
+      احصل على مفتاحك المجاني من Google AI Studio ثم أدخله هنا. مجاني 100% بدون بطاقة.
+    </div>
+    <a class="api-link" href="https://aistudio.google.com/app/apikey" target="_blank">← احصل على API Key مجاني من هنا</a>
+    <div class="form-group">
+      <label>Gemini API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="AIza..." />
+    </div>
+    <br>
+    <button class="btn-gold" onclick="activateKey()">تفعيل والمتابعة ←</button>
+  </div>
+
+  <!-- FORM SECTION -->
+  <div id="formSection">
+
+    <!-- Personal Info -->
+    <div class="card fade-up">
+      <div class="card-title">
+        <div class="card-icon">👤</div>
+        المعلومات الشخصية
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>الاسم الكامل *</label>
+          <input type="text" id="name" placeholder="محمد عبدالله" />
+        </div>
+        <div class="form-group">
+          <label>المسمى الوظيفي المستهدف *</label>
+          <input type="text" id="jobTitle" placeholder="مهندس برمجيات" />
+        </div>
+        <div class="form-group">
+          <label>البريد الإلكتروني *</label>
+          <input type="text" id="email" placeholder="name@email.com" />
+        </div>
+        <div class="form-group">
+          <label>رقم الهاتف</label>
+          <input type="text" id="phone" placeholder="+966 5X XXX XXXX" />
+        </div>
+        <div class="form-group">
+          <label>المدينة / الدولة</label>
+          <input type="text" id="location" placeholder="الرياض، السعودية" />
+        </div>
+        <div class="form-group">
+          <label>LinkedIn / Portfolio</label>
+          <input type="text" id="linkedin" placeholder="linkedin.com/in/name" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Experience -->
+    <div class="card fade-up">
+      <div class="card-title">
+        <div class="card-icon">💼</div>
+        الخبرة العملية
+      </div>
+      <div class="form-group">
+        <label>اذكر خبراتك العملية بالتفصيل (المسمى، الشركة، المدة، المهام، الإنجازات)</label>
+        <textarea id="experience" placeholder="مثال:
+• مطور ويب في شركة تقنية — 2022 إلى 2024
+  - بنيت نظام إدارة عملاء خفّض وقت المعالجة 40%
+  - قدت فريق من 3 مطورين لتسليم 5 مشاريع في الوقت المحدد
+
+• مستقل freelancer — 2020 إلى 2022
+  - أنجزت 30+ مشروع ويب لعملاء من 8 دول" style="min-height: 160px;"></textarea>
+      </div>
+    </div>
+
+    <!-- Education -->
+    <div class="card fade-up">
+      <div class="card-title">
+        <div class="card-icon">🎓</div>
+        التعليم
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>أعلى شهادة علمية</label>
+          <input type="text" id="degree" placeholder="بكالوريوس هندسة حاسوب" />
+        </div>
+        <div class="form-group">
+          <label>الجامعة / المؤسسة</label>
+          <input type="text" id="university" placeholder="جامعة الملك عبدالله" />
+        </div>
+        <div class="form-group">
+          <label>سنة التخرج</label>
+          <input type="text" id="gradYear" placeholder="2022" />
+        </div>
+        <div class="form-group">
+          <label>المعدل التراكمي (اختياري)</label>
+          <input type="text" id="gpa" placeholder="3.8 / 4.0" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="card fade-up">
+      <div class="card-title">
+        <div class="card-icon">⚡</div>
+        المهارات والشهادات
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>المهارات التقنية والمهنية</label>
+        <textarea id="skills" placeholder="مثال: Python، React، SQL، إدارة المشاريع، Adobe Photoshop، التحليل المالي..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>الشهادات والدورات (اختياري)</label>
+        <textarea id="certs" placeholder="مثال:
+• Google Data Analytics Certificate — 2023
+• AWS Cloud Practitioner — 2022
+• PMP — 2021"></textarea>
+      </div>
+    </div>
+
+    <!-- Job Details -->
+    <div class="card fade-up">
+      <div class="card-title">
+        <div class="card-icon">🎯</div>
+        تفاصيل الوظيفة المستهدفة
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>الصناعة / المجال</label>
+        <select id="industry">
+          <option value="">اختر المجال</option>
+          <option>تقنية المعلومات والبرمجة</option>
+          <option>المالية والمحاسبة</option>
+          <option>التسويق والإعلان</option>
+          <option>الهندسة</option>
+          <option>الصحة والطب</option>
+          <option>التعليم والتدريب</option>
+          <option>المبيعات وخدمة العملاء</option>
+          <option>القانون</option>
+          <option>الإدارة والموارد البشرية</option>
+          <option>التصميم والإبداع</option>
+          <option>أخرى</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>لغة CV المطلوبة</label>
+        <select id="cvLang">
+          <option value="arabic">عربي</option>
+          <option value="english">English</option>
+          <option value="both">كلاهما (عربي + إنجليزي)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>وصف الوظيفة أو متطلباتها (اختياري — يرفع دقة التخصيص بشكل كبير)</label>
+        <textarea id="jobDesc" placeholder="الصق هنا وصف الوظيفة من الإعلان..." style="min-height: 120px;"></textarea>
+      </div>
+    </div>
+
+    <!-- GENERATE BUTTON -->
+    <button class="btn-gold" onclick="generateCV()" id="generateBtn" style="font-size: 17px; padding: 18px;">
+      ✨ توليد CV احترافي الآن
+    </button>
+
+  </div>
+
+  <!-- LOADING -->
+  <div id="loadingSection">
+    <div class="loader-ring"></div>
+    <div style="font-size:18px; font-weight:700; margin-bottom:8px;">يعمل الذكاء الاصطناعي...</div>
+    <div style="font-size:13px; color:var(--muted);">يستغرق من 20 إلى 60 ثانية</div>
+    <ul class="loading-steps" id="loadingSteps">
+      <li id="step1"><span class="step-dot"></span> تحليل معلوماتك</li>
+      <li id="step2"><span class="step-dot"></span> صياغة الملف الشخصي</li>
+      <li id="step3"><span class="step-dot"></span> تحسين لنظام ATS</li>
+      <li id="step4"><span class="step-dot"></span> صياغة نقاط الخبرة</li>
+      <li id="step5"><span class="step-dot"></span> توليد نصائح التحسين</li>
+    </ul>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultSection">
+
+    <!-- Result Header -->
+    <div class="result-header fade-up">
+      <div class="result-score">
+        <div class="score-ring"><span id="scoreText">92%</span></div>
+        <div>
+          <div class="result-title">CV جاهز للإطلاق ✅</div>
+          <div class="result-subtitle">تم تحسينه لنظام ATS ومحكّم للقبول</div>
+        </div>
+      </div>
+      <div class="ats-badges">
+        <span class="ats-badge">ATS ✓</span>
+        <span class="ats-badge">Keywords ✓</span>
+        <span class="ats-badge warn">متخصص</span>
+      </div>
+    </div>
+
+    <!-- CV Tabs -->
+    <div class="cv-output fade-up">
+      <div class="cv-tab-bar">
+        <div class="cv-tab active" onclick="switchTab('cv')">السيرة الذاتية</div>
+        <div class="cv-tab" onclick="switchTab('tips')">نصائح التحسين</div>
+        <div class="cv-tab" onclick="switchTab('cover')">خطاب التقديم</div>
+      </div>
+
+      <!-- CV Tab -->
+      <div class="cv-content active" id="tabCv">
+        <div id="cvOutput" class="cv-text"></div>
+      </div>
+
+      <!-- Tips Tab -->
+      <div class="cv-content" id="tabTips">
+        <div id="tipsOutput"></div>
+      </div>
+
+      <!-- Cover Letter Tab -->
+      <div class="cv-content" id="tabCover">
+        <div id="coverOutput" class="cv-text"></div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="btn-gold" onclick="copyCV()">📋 نسخ السيرة الذاتية</button>
+      <button class="btn-outline" onclick="startOver()">← إنشاء جديد</button>
+    </div>
+
+    <!-- Payment Section -->
+    <div class="payment-banner fade-up">
+      <div class="section-label">✦ احصل على النسخة الكاملة ✦</div>
+      <div style="font-size:15px; font-weight:600; margin-top:8px;">ما حصلت عليه الآن هو معاينة. ادفع واحصل على:</div>
+      <div class="payment-price">$19</div>
+      <div class="payment-desc">CV بصيغة Word و PDF + خطاب تقديم مخصص + 3 نسخ معدّلة + دعم شخصي</div>
+      <button class="paypal-btn" onclick="payWithPaypal()">
+        💳 ادفع الآن عبر PayPal
+      </button>
+      <div style="font-size:11px; color:var(--muted); margin-top:12px;">ضمان استرداد كامل خلال 24 ساعة</div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div>ProResume AI — مدعوم بـ Google Gemini</div>
+  <div style="margin-top:6px; color:#555;">© 2025 جميع الحقوق محفوظة</div>
+</footer>
+
+<script>
+// ===== STATE =====
+let GEMINI_KEY = '';
+let cvResult = '';
+let tipsResult = '';
+let coverResult = '';
+
+// ===== STEP 1: ACTIVATE KEY =====
+function activateKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key || !key.startsWith('AIza')) {
+    showError('الرجاء إدخال مفتاح API صحيح يبدأ بـ AIza');
+    return;
+  }
+  GEMINI_KEY = key;
+  hideError();
+  document.getElementById('apiSection').style.display = 'none';
+  document.getElementById('formSection').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== GENERATE CV =====
+async function generateCV() {
+  const name = document.getElementById('name').value.trim();
+  const jobTitle = document.getElementById('jobTitle').value.trim();
+  const email = document.getElementById('email').value.trim();
+
+  if (!name || !jobTitle || !email) {
+    showError('الرجاء ملء الحقول المطلوبة: الاسم، المسمى الوظيفي، البريد الإلكتروني');
+    return;
+  }
+
+  hideError();
+
+  // Collect data
+  const userData = {
+    name, jobTitle, email,
+    phone: document.getElementById('phone').value,
+    location: document.getElementById('location').value,
+    linkedin: document.getElementById('linkedin').value,
+    experience: document.getElementById('experience').value,
+    degree: document.getElementById('degree').value,
+    university: document.getElementById('university').value,
+    gradYear: document.getElementById('gradYear').value,
+    gpa: document.getElementById('gpa').value,
+    skills: document.getElementById('skills').value,
+    certs: document.getElementById('certs').value,
+    industry: document.getElementById('industry').value,
+    cvLang: document.getElementById('cvLang').value,
+    jobDesc: document.getElementById('jobDesc').value,
+  };
+
+  // Show loading
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('loadingSection').style.display = 'block';
+
+  // Animate steps
+  const stepTiming = [0, 4000, 8000, 14000, 20000];
+  const stepIds = ['step1','step2','step3','step4','step5'];
+
+  stepIds.forEach((id, i) => {
+    setTimeout(() => {
+      if (i > 0) {
+        document.getElementById(stepIds[i-1]).className = 'done';
+      }
+      document.getElementById(id).className = 'active';
+    }, stepTiming[i]);
+  });
+
+  try {
+    const langInstruction = userData.cvLang === 'english'
+      ? 'Write entirely in professional English.'
+      : userData.cvLang === 'both'
+      ? 'Write the CV in both Arabic and English, Arabic first.'
+      : 'اكتب بالعربية الفصحى المهنية بشكل كامل.';
+
+    const prompt = `أنت خبير متخصص في كتابة السير الذاتية الاحترافية وتحسينها لنظام ATS. مهمتك إنشاء CV احترافي عالي الجودة.
+
+${langInstruction}
+
+معلومات المتقدم:
+- الاسم: ${userData.name}
+- المسمى المستهدف: ${userData.jobTitle}
+- البريد: ${userData.email}
+- الهاتف: ${userData.phone || 'غير محدد'}
+- الموقع: ${userData.location || 'غير محدد'}
+- LinkedIn: ${userData.linkedin || 'غير محدد'}
+- المجال: ${userData.industry || 'غير محدد'}
+
+الخبرة العملية:
+${userData.experience || 'لم يذكر'}
+
+التعليم:
+- الشهادة: ${userData.degree || 'غير محدد'}
+- الجامعة: ${userData.university || 'غير محدد'}
+- سنة التخرج: ${userData.gradYear || 'غير محدد'}
+- المعدل: ${userData.gpa || 'غير محدد'}
+
+المهارات:
+${userData.skills || 'غير محدد'}
+
+الشهادات والدورات:
+${userData.certs || 'غير محدد'}
+
+${userData.jobDesc ? `وصف الوظيفة المستهدفة:\n${userData.jobDesc}` : ''}
+
+أنشئ CV كاملاً ومنظماً بالأقسام التالية مع استخدام رموز واضحة للفصل:
+
+═══════════════════════════════
+[الاسم الكامل]
+[المسمى الوظيفي] | [البريد] | [الهاتف] | [الموقع]
+[LinkedIn]
+═══════════════════════════════
+
+■ الملف الشخصي
+[3-4 جمل قوية تبرز القيمة الفريدة للمتقدم، مُحسّنة لـ ATS]
+
+■ الخبرة العملية
+[كل وظيفة بصيغة: المسمى | الشركة | التاريخ]
+• [إنجاز بأرقام وتأثير قابل للقياس]
+• [إنجاز بأرقام وتأثير قابل للقياس]
+• [إنجاز بأرقام وتأثير قابل للقياس]
+
+■ التعليم
+[الشهادة | الجامعة | السنة | المعدل]
+
+■ المهارات
+[مقسّمة بشكل منظم: تقنية | مهنية | لغات]
+
+■ الشهادات والدورات
+[إن وجدت]
+
+اجعل كل نقطة تبدأ بفعل قوي (طوّر، أدار، أنجز، خفّض، رفع...) وأضف أرقاماً وإنجازات قابلة للقياس. اجعله متوافقاً 100% مع ATS.`;
+
+    // Call Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'خطأ في الاتصال بـ Gemini API');
+    }
+
+    const data = await response.json();
+    cvResult = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    if (!cvResult) throw new Error('لم يتم استلام رد من الذكاء الاصطناعي');
+
+    // Generate tips
+    const tipsPrompt = `بناءً على هذه السيرة الذاتية:
+${cvResult}
+
+قدّم 5 نصائح مخصصة وعملية لتحسين هذا CV ورفع نسبة القبول. كل نصيحة في 2-3 جمل. ابدأ كل نصيحة بـ "نصيحة X:" ثم عنوان قصير ثم الشرح.`;
+
+    const tipsRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: tipsPrompt }] }],
+          generationConfig: { temperature: 0.6, maxOutputTokens: 800 }
+        })
+      }
+    );
+
+    const tipsData = await tipsRes.json();
+    tipsResult = tipsData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // Generate cover letter
+    const coverPrompt = `اكتب خطاب تقديم (Cover Letter) مهني وشخصي لـ ${userData.name} يتقدم لوظيفة ${userData.jobTitle} في مجال ${userData.industry || 'التقنية'}.
+
+استخدم معلوماته من هذا CV:
+${cvResult.substring(0, 1000)}
+
+اجعله:
+- قصير (3 فقرات)
+- شخصي ومقنع
+- يبرز أبرز 2-3 إنجازات
+- ينتهي بدعوة للتواصل
+
+${userData.cvLang === 'english' ? 'Write in English.' : 'اكتب بالعربية.'}`;
+
+    const coverRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: coverPrompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+        })
+      }
+    );
+
+    const coverData = await coverRes.json();
+    coverResult = coverData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // Mark last step done
+    document.getElementById('step5').className = 'done';
+
+    setTimeout(showResult, 800);
+
+  } catch (err) {
+    document.getElementById('loadingSection').style.display = 'none';
+    document.getElementById('formSection').style.display = 'block';
+    showError('خطأ: ' + err.message + ' — تحقق من مفتاح API وحاول مجدداً');
+  }
+}
+
+// ===== SHOW RESULT =====
+function showResult() {
+  document.getElementById('loadingSection').style.display = 'none';
+  document.getElementById('resultSection').style.display = 'block';
+
+  // Display CV
+  document.getElementById('cvOutput').textContent = cvResult;
+
+  // Display tips
+  const tipsHtml = tipsResult.split('\n').filter(l => l.trim()).map((line, i) => {
+    if (line.match(/^نصيحة \d+:/i) || line.match(/^Tip \d+:/i)) {
+      return `<div class="tip-card"><span class="tip-num">${line}</span></div>`;
+    }
+    // Append to last tip card
+    return `<div style="font-size:13px; color:var(--muted); margin-top:4px; padding:0 16px;">${line}</div>`;
+  }).join('');
+
+  document.getElementById('tipsOutput').innerHTML = tipsResult.split(/نصيحة \d+:/i).filter(Boolean).map((tip, i) => {
+    return `<div class="tip-card"><span class="tip-num">نصيحة ${i+1}:</span> ${tip.trim()}</div>`;
+  }).join('') || `<div class="cv-text">${tipsResult}</div>`;
+
+  // Display cover letter
+  document.getElementById('coverOutput').textContent = coverResult;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tab) {
+  document.querySelectorAll('.cv-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.cv-content').forEach(c => c.classList.remove('active'));
+
+  const tabMap = { cv: 0, tips: 1, cover: 2 };
+  document.querySelectorAll('.cv-tab')[tabMap[tab]].classList.add('active');
+  document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+}
+
+// ===== COPY CV =====
+function copyCV() {
+  navigator.clipboard.writeText(cvResult).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅ تم النسخ!';
+    setTimeout(() => btn.textContent = '📋 نسخ السيرة الذاتية', 2000);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = cvResult;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    event.target.textContent = '✅ تم النسخ!';
+    setTimeout(() => event.target.textContent = '📋 نسخ السيرة الذاتية', 2000);
+  });
+}
+
+// ===== START OVER =====
+function startOver() {
+  document.getElementById('resultSection').style.display = 'none';
+  document.getElementById('formSection').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== PAYPAL =====
+function payWithPaypal() {
+  // استبدل بـ PayPal.me link الخاص بك
+  window.open('https://paypal.me/YOURNAME/19', '_blank');
+}
+
+// ===== HELPERS =====
+function showError(msg) {
+  const el = document.getElementById('errorAlert');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideError() {
+  document.getElementById('errorAlert').style.display = 'none';
+}
+</script>
+</body>
+</html>
